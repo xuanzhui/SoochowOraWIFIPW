@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+
+__author__ = 'xuanzhui'
+
+import urllib.request
+import time
+import getFileSSOHttpClient
+
+logf="/home/user/py/send_pw.log"
+
+#outer link
+reqstr="http://outer.link/ClearGuestWebservice/rest/clearguest/pushClearguestPwd?password=%s"
+
+pw = getFileSSOHttpClient.GetFileSSOHttpClient().pwfullsteps()[1]
+nowt=time.strftime("%c")
+
+if not pw:
+	with open(logf, 'a') as fw:
+		fw.write(nowt + " can't get the password\n\n")
+
+reqstr=reqstr%pw
+
+#create the object, assign it to a variable
+proxy = urllib.request.ProxyHandler({'http': 'proxy host:proxy port'})
+# construct a new opener using your proxy settings
+opener = urllib.request.build_opener(proxy)
+# install the openen on the module-level
+urllib.request.install_opener(opener)
+# make a request
+
+urllib.request.urlretrieve(reqstr)
+
+with open(logf, 'a') as fw:
+	fw.write(nowt + " sending the password : "+ pw + '\n\n')

@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+
+__author__ = 'xuanzhui'
+
+from wifipwqr import GenerateWifiPWQR
+import time
+
+logf="setup your log path"
+
+nowt=time.strftime("%c")
+
+wifiqr = GenerateWifiPWQR()
+
+if not wifiqr.generate():
+	with open(logf, 'a') as fw:
+		fw.write(nowt + " can't get the password\n\n")
+
+	exit(0)
+
+with open(logf, 'a') as fw:
+	fw.write(nowt + " sending the password : "+ wifiqr.pw + '\n\n')
+
+# Send an HTML email with an embedded image and a plain text message for
+# email clients that don't want to display the HTML.
+
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
+
+# TODO
+# setup your own mail list
+strFrom = 'WIFIPW Notification<you@sample.com>'
+strTo = 'to@sample.com'
+
+# Create the root message and fill in the from, to, and subject headers
+msgRoot = MIMEMultipart('related')
+msgRoot['Subject'] = 'Clear Guest Wifi Password Notification'
+msgRoot['From'] = strFrom
+msgRoot['To'] = strTo
+msgRoot.preamble = 'This is a multi-part message in MIME format.'
+
+# Encapsulate the plain and HTML versions of the message body in an
+# 'alternative' part, so message agents can decide which they want to display.
+msgAlternative = MIMEMultipart('alternative')
+msgRoot.attach(msgAlternative)
+
+msgText = MIMEText('Password: ' + wifiqr.pw)
+msgAlternative.attach(msgText)
+
+# We reference the image in the IMG SRC attribute by the ID we give it below
+msgText = MIMEText('Password: <b>%s</b><br><img src="cid:image1"><br>Enjoy!' % wifiqr.pw, 'html')
+msgAlternative.attach(msgText)
+
+#TODO
+with open('setup the img path to be sent', 'rb') as fp:
+	msgImage = MIMEImage(fp.read())
+
+# Define the image's ID as referenced above
+msgImage.add_header('Content-ID', '<image1>')
+msgRoot.attach(msgImage)
+
+# Send the email (this example assumes SMTP authentication is required)
+import smtplib
+#TODO
+#setup your mail server and login info
+smtp = smtplib.SMTP_SSL('host', port)
+smtp.login('mail user', 'mail password')
+#smtp.sendmail(strFrom, strTo, msgRoot.as_string())
+smtp.send_message(msgRoot)
+smtp.quit()
