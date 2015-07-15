@@ -1,0 +1,43 @@
+apply plugin: 'java'
+
+version = '1.0'
+
+//overwrite default settings
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src']
+        }
+
+        //important for log4j2 configure file
+        //or ERROR StatusLogger No log4j2 configuration file found
+        resources {
+            srcDirs = ['src/xml']
+        }
+    }
+
+    test {
+        java {
+            srcDirs = ['test']
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.apache.httpcomponents:httpclient:4.5'
+    compile 'org.apache.logging.log4j:log4j-core:2.3'
+    //for qr code
+    compile 'com.google.zxing:core:3.2.0'
+}
+
+//run 'gradle copyDependencies' in console to copy dependencies into lib dir
+//not really required
+//if want to know recursive dependencies, run 'gradle dependencies'
+task copyDependencies(type: Copy) {
+    from configurations.compile
+    into 'lib'
+}
