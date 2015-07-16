@@ -58,7 +58,7 @@ public class Main {
 		logger.info(" get password "+password);
 
 		//生成QR Code
-		GenerateQRCode qr = new GenerateQRCode("password");
+		GenerateQRCode qr = new GenerateQRCode(password);
         try {
 			qr.generateQRCode();
 		} catch (Exception e) {
