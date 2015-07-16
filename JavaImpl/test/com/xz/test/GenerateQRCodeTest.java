@@ -1,16 +1,16 @@
 package com.xz.test;
 
-import com.google.zxing.WriterException;
 import com.xz.qr.GenerateQRCode;
 
-import java.io.IOException;
+import org.junit.Test;
 
 /**
  * Created by xuanzhui on 15/7/15.
  */
 public class GenerateQRCodeTest {
-    public static void main(String[] args) throws IOException, WriterException {
-        GenerateQRCode qr = new GenerateQRCode("you know what hehe");
+	@Test
+    public void testQRGeneration() throws Exception {
+        GenerateQRCode qr = new GenerateQRCode("bless me");
         qr.generateQRCode();
     }
 }

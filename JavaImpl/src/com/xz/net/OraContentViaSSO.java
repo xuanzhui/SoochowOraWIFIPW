@@ -21,28 +21,35 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
+
+/**
+ * 可以不手动保留传递cookie
+ * HttpClient自动保留转发
+ */
 public class OraContentViaSSO {
 
 	Map<String, String> ssoparam;
 	private String ssousername;
 	private String password;
-
+	
 	/**
-	 * 经测试，可以不手动保留传递cookie
-	 * 其原因可能是HttpClient进行了自动处理
+	 * 设置SSO用户名和密码
+	 * @param ssousername
+	 * @param password
 	 */
-/*
-	public static void main(String[] args) throws ClientProtocolException, IOException {		
-		
-		String url="https://gmp.oracle.com/captcha/files/airespace_pwd_apac.txt";
-		String reqhost="gmp.oracle.com";
-		
-		String htmlcont=getOraUrlContent(url, reqhost);
-		String pw=parseWifiPassword(htmlcont);
-		
-		System.out.println(pw);
+	public void setSSOAuth(String ssousername, String password){
+		this.ssousername=ssousername;
+		this.password=password;
 	}
-	*/
+	
+	/**
+	 * 获取目标页面内容
+	 * @param url
+	 * @param reqhost
+	 * @return
+	 * @throws IllegalStateException
+	 * @throws IOException
+	 */
 	public String getOraUrlContent(String url, String reqhost) throws IllegalStateException, IOException{
 		CloseableHttpClient httpclient = HttpClientUtils.createSSLClientDefault();
 		String redirectUrl;
@@ -52,12 +59,20 @@ public class OraContentViaSSO {
 		return retrieveRequestPage(httpclient, redirectUrl, reqhost, false);
 	}
 
+	/**
+	 * call this method to get wifi password directly
+	 * @param url
+	 * @param reqhost
+	 * @return
+	 * @throws IllegalStateException
+	 * @throws IOException
+	 */
 	public String parseWifiPassword(String url, String reqhost) throws IllegalStateException, IOException {
 		String htmlcont=getOraUrlContent(url, reqhost);
 		return parseWifiPassword(htmlcont);
 	}
 
-	public String parseWifiPassword(String htmlcont) throws IOException{
+	private String parseWifiPassword(String htmlcont) throws IOException{
 		BufferedReader br=new BufferedReader(new StringReader(htmlcont));
 
 		String line;
@@ -74,16 +89,6 @@ public class OraContentViaSSO {
 	}
 
 	/**
-	 * 设置SSO用户名和密码
-	 * @param ssousername
-	 * @param password
-	 */
-	public void setLogInfo(String ssousername, String password){
-		this.ssousername=ssousername;
-		this.password=password;
-	}
-
-	/**
 	 * SSO重定向之前的请求
 	 * 该请求的response将包含进入SSO的前提信息
 	 * @param httpclient
@@ -91,7 +96,7 @@ public class OraContentViaSSO {
 	 * @throws IllegalStateException
 	 * @throws IOException
 	 */
-	public String requestBeforeSSO(CloseableHttpClient httpclient, String url, boolean debugFlag) throws IllegalStateException, IOException{
+	private String requestBeforeSSO(CloseableHttpClient httpclient, String url, boolean debugFlag) throws IllegalStateException, IOException{
 		String location=null;
 
 		if (debugFlag)
@@ -139,7 +144,7 @@ public class OraContentViaSSO {
 	 * @throws ClientProtocolException
 	 * @throws IOException
 	 */
-	public String loadSSOpage(CloseableHttpClient httpclient, String preloc, boolean debugFlag) throws ClientProtocolException, IOException{
+	private String loadSSOpage(CloseableHttpClient httpclient, String preloc, boolean debugFlag) throws ClientProtocolException, IOException{
 		String location=null;
 
 		if (debugFlag)
@@ -148,7 +153,7 @@ public class OraContentViaSSO {
 
 		HttpGet req = new HttpGet(preloc);
 		//禁止重定向
-		req.setConfig(RequestConfig .custom().setRedirectsEnabled(false).build());
+		req.setConfig(RequestConfig.custom().setRedirectsEnabled(false).build());
 
 		HttpClientUtils.simulateBrower(req);
 
@@ -182,7 +187,7 @@ public class OraContentViaSSO {
 	}
 
 	//解析SSO登录页面
-	public Map<String, String> parseSSOlogon(HttpEntity entity, boolean debugFlag) throws IllegalStateException, IOException{
+	private Map<String, String> parseSSOlogon(HttpEntity entity, boolean debugFlag) throws IllegalStateException, IOException{
 		if (debugFlag)
 			System.out.println("Parsing params---");
 
@@ -226,8 +231,8 @@ public class OraContentViaSSO {
 	 * 直接把上一步的表单提交，
 	 * 虽然提交失败，因为没用户名和密码，
 	 * 但是此时返回的页面保留了实际登录所需的信息
-	 */
-	public String loadSSOstep3(CloseableHttpClient httpclient) throws ClientProtocolException, IOException{
+	 *
+	private String loadSSOstep3(CloseableHttpClient httpclient) throws ClientProtocolException, IOException{
 		String location=null;
 
 		System.out.println("---- in SSO first request----");
@@ -269,7 +274,7 @@ public class OraContentViaSSO {
 		System.out.println("---- step3 done ----");
 
 		return location;
-	}
+	}*/
 
 	/**
 	 * 这步开始正式login
@@ -280,7 +285,10 @@ public class OraContentViaSSO {
 	 * @throws ClientProtocolException
 	 * @throws IOException
 	 */
-	public String realSSOLogin(CloseableHttpClient httpclient, boolean debugFlag) throws ClientProtocolException, IOException{
+	private String realSSOLogin(CloseableHttpClient httpclient, boolean debugFlag) throws ClientProtocolException, IOException{
+		if (this.ssousername==null || this.password==null)
+			throw new ClientProtocolException("you must provide sso username and password!");
+		
 		String location=null;
 
 		if (debugFlag)
@@ -311,9 +319,8 @@ public class OraContentViaSSO {
 				nvps.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
 		}
 
-		//TODO
-		nvps.add(new BasicNameValuePair("ssousername", "your user name"));
-		nvps.add(new BasicNameValuePair("password", "your password"));
+		nvps.add(new BasicNameValuePair("ssousername", this.ssousername));
+		nvps.add(new BasicNameValuePair("password", this.password));
 
 		req.setEntity(new UrlEncodedFormEntity(nvps));
 
@@ -344,9 +351,8 @@ public class OraContentViaSSO {
 	 * 而且包含一个新的cookie信息
 	 *
 	 * 此时去掉重定向限制，直接获取目标页面
-	 *
 	 */
-	public String retrieveRequestPage(CloseableHttpClient httpclient, String preloc, String requestHost, boolean debugFlag) throws IOException{
+	private String retrieveRequestPage(CloseableHttpClient httpclient, String preloc, String requestHost, boolean debugFlag) throws IOException{
 		String htmlcont=null;
 
 		if (debugFlag)
@@ -380,51 +386,4 @@ public class OraContentViaSSO {
 
 		return htmlcont;
 	}
-
-	/**
-	 * 经测试这步可以不要提供cookie信息
-	 * 但是这步能成功的前提是wifi页面已经成功打开
-	 * 否则会再次重定向到登录页面
-	 */
-	public String retrieveWIFI(CloseableHttpClient httpclient) throws ClientProtocolException, IOException{
-		String location=null;
-
-		System.out.println("---- request wifi code ----");
-
-		HttpGet req = new HttpGet("https://gmp.oracle.com/captcha/files/airespace_pwd_apac.txt");
-
-		//禁止重定向
-		req.setConfig(RequestConfig .custom().setRedirectsEnabled(false).build());
-
-		HttpClientUtils.simulateBrower(req);
-
-		//System.out.println("--set cookie : "+cookie + "---");
-
-		//req.setHeader("Cookie", cookie);
-		req.setHeader("Host", "gmp.oracle.com");
-		//req.setHeader("Referer", "https://login.oracle.com/mysso/signon.jsp");
-
-		CloseableHttpResponse resp = httpclient.execute(req);
-
-		//保存cookie
-		//cookie=keepCookies(resp);
-
-//		Header header = resp.getFirstHeader("Location");
-//		if (header != null)
-//			location=header.getValue();
-
-		HttpEntity entity = resp.getEntity();
-
-		HttpClientUtils.printDebugInfo(resp, entity);
-		//ssoparam=parseSSOlogon(entity);
-
-		EntityUtils.consume(entity);
-
-		resp.close();
-
-		System.out.println("---- final step done ----");
-
-		return location;
-	}
-
 }

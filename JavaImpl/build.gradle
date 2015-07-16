@@ -12,7 +12,7 @@ sourceSets {
         //important for log4j2 configure file
         //or ERROR StatusLogger No log4j2 configuration file found
         resources {
-            srcDirs = ['src/xml']
+            srcDirs = ['resources']
         }
     }
 
@@ -32,12 +32,19 @@ dependencies {
     compile 'org.apache.logging.log4j:log4j-core:2.3'
     //for qr code
     compile 'com.google.zxing:core:3.2.0'
+    compile 'com.sun.mail:javax.mail:1.5.4'
+    testCompile "junit:junit:4.12"
+}
+
+//fix charset error
+tasks.withType(JavaCompile) {  
+	options.encoding = "UTF-8"  
 }
 
 //run 'gradle copyDependencies' in console to copy dependencies into lib dir
 //not really required
 //if want to know recursive dependencies, run 'gradle dependencies'
 task copyDependencies(type: Copy) {
-    from configurations.compile
+    from configurations.compile, configurations.testCompile
     into 'lib'
 }
